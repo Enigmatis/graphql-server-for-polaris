@@ -2,7 +2,12 @@ import {gql} from 'apollo-server';
 import {ApolloServer, ApolloServerExpressConfig, makeExecutableSchema} from 'apollo-server-express';
 import express from 'express';
 import {applyMiddleware} from "graphql-middleware";
-import {dataVersionMiddleware, initContextForDataVersion} from 'polaris-delta-middleware';
+import {
+    dataVersionMiddleware,
+    initContextForDataVersion,
+    softDeletedMiddleware,
+    IrrelevantEntitiesExtension
+} from 'polaris-delta-middleware';
 import {repositoryEntityTypeDefs, scalarsResolvers, scalarsTypeDefs} from 'polaris-schema';
 
 const books = [
@@ -46,7 +51,10 @@ const typeDefs = gql`
 
 const resolvers = {
     Query: {
-        books: () => books,
+        books: (root, args, context, info) => {
+            context.irrelevantEntities = {name: 'blabla'};
+            return books;
+        },
         bla: () => "bla"
     },
     Book: {
@@ -55,15 +63,15 @@ const resolvers = {
 };
 
 const app = express();
-const typeDefsFinal = [typeDefs, ...scalarsTypeDefs, ...repositoryEntityTypeDefs];
 const schema = makeExecutableSchema({
-    typeDefs: typeDefsFinal, resolvers: [resolvers, ...scalarsResolvers]
+    typeDefs: [typeDefs, scalarsTypeDefs, repositoryEntityTypeDefs], resolvers: [resolvers, scalarsResolvers]
 });
 
-const executableSchema = applyMiddleware(schema, dataVersionMiddleware);
+const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
 const config: ApolloServerExpressConfig = {
     schema: executableSchema,
-    context: initContextForDataVersion
+    context: initContextForDataVersion,
+    extensions: [() => new IrrelevantEntitiesExtension()]
 };
 
 

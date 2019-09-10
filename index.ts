@@ -15,7 +15,7 @@ import {
     scalarsTypeDefs
 } from '@enigmatis/polaris-schema';
 import {initializeContextForRequest} from "./context-builder";
-import {createConnection} from "typeorm";
+import {ConnectionOptions, createConnection} from "typeorm";
 import {Book} from "./dal/book";
 
 const books = [
@@ -33,7 +33,7 @@ const books = [
     },
 ];
 
-createConnection({
+let connectionOptions: ConnectionOptions = {
     type: "postgres",
     host: "localhost",
     port: 5432,
@@ -41,21 +41,23 @@ createConnection({
     password: "Aa123456",
     database: "postgres",
     entities: [
-        Book
+        __dirname + '/dal/*.ts'
     ],
     synchronize: true,
     logging: false
-}).then(async connection => {
-    let bookRepository = connection.getRepository(Book);
-    let book = new Book();
-    book.author = "my book";
-    book.title = "my title";
-    book.dataVersion = 2;
-    await bookRepository.save(book);
-    console.log("book has been save");
-}).catch(error => console.log(error));
+};
 
-const typeDefs = gql`
+const play = async () => {
+    const connection = await createConnection(connectionOptions);
+
+    let initDb = async () => {
+        let bookRepo = connection.getRepository(Book);
+        let book1 = new Book('Harry Potter and the Chamber of Secrets', 'J.K. Rowling', 2);
+        let book2 = new Book('Jurassic Park', 'Michael Crichton', 5);
+        return bookRepo.save([book1, book2]);
+    };
+
+    const typeDefs = gql`
     # Comments in GraphQL are defined with the hash (#) symbol.
     
     # This "Book" type can be used in other type declarations.
@@ -80,37 +82,43 @@ const typeDefs = gql`
     }
 `;
 
-const resolvers = {
-    Query: {
-        books: (root, args, context, info) => {
-            context.irrelevantEntities = {name: 'blabla'};
-            return books;
+    const resolvers = {
+        Query: {
+            books: async (root, args, context, info) => {
+                context.irrelevantEntities = {name: 'blabla'};
+                const bookRepo = connection.getRepository(Book);
+                let books = await bookRepo.find();
+                return books;
+            },
+            bla: () => "bla"
         },
-        bla: () => "bla"
-    },
-    Book: {
-        aList: () => ["asd", "asddd", "bdbdb"]
-    }
+        Book: {
+            aList: () => ["asd", "asddd", "bdbdb"]
+        }
+    };
+
+    const app = express();
+    const schema = makeExecutableSchema({
+        typeDefs: [typeDefs, repositoryEntityTypeDefs, scalarsTypeDefs],
+        resolvers: [resolvers, scalarsResolvers]
+    });
+
+    const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
+    const config: ApolloServerExpressConfig = {
+        schema: executableSchema,
+        context: initializeContextForRequest,
+        extensions: [() => new IrrelevantEntitiesExtension()]
+    };
+
+    initDb().then(() => {
+        const server = new ApolloServer(config);
+
+        server.applyMiddleware({app});
+
+        app.listen(4000, (() => {
+            console.log(`🚀  Server ready http://localhost:4000/graphql`);
+        }));
+    });
 };
 
-const app = express();
-const schema = makeExecutableSchema({
-    typeDefs: [typeDefs, repositoryEntityTypeDefs, scalarsTypeDefs],
-    resolvers: [resolvers, scalarsResolvers]
-});
-
-const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
-const config: ApolloServerExpressConfig = {
-    schema: executableSchema,
-    context: initializeContextForRequest,
-    extensions: [() => new IrrelevantEntitiesExtension()]
-};
-
-
-const server = new ApolloServer(config);
-
-server.applyMiddleware({app});
-
-app.listen(4000, (() => {
-    console.log(`🚀  Server ready http://localhost:4000/graphql`);
-}));
+play();

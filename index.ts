@@ -1,5 +1,5 @@
-import {gql} from 'apollo-server';
-import {ApolloServer, ApolloServerExpressConfig, makeExecutableSchema} from 'apollo-server-express';
+import {gql, makeExecutableSchema} from 'apollo-server';
+import {ApolloServer, ApolloServerExpressConfig} from 'apollo-server-express';
 import express from 'express';
 import {applyMiddleware} from 'graphql-middleware';
 import {
@@ -7,7 +7,12 @@ import {
     softDeletedMiddleware,
     IrrelevantEntitiesExtension
 } from '@enigmatis/polaris-delta-middleware';
-import {repositoryEntityTypeDefs, scalarsResolvers, scalarsTypeDefs} from '@enigmatis/polaris-schema';
+
+import {
+    repositoryEntityTypeDefs,
+    scalarsResolvers,
+    scalarsTypeDefs
+} from '@enigmatis/polaris-schema';
 import {initializeContextForRequest} from "./context-builder";
 
 const books = [
@@ -64,9 +69,7 @@ const resolvers = {
 };
 
 const app = express();
-const schema = makeExecutableSchema({
-    typeDefs: [typeDefs, scalarsTypeDefs, repositoryEntityTypeDefs], resolvers: [resolvers, scalarsResolvers]
-});
+const schema = makeExecutableSchema({typeDefs:[typeDefs, repositoryEntityTypeDefs, scalarsTypeDefs], resolvers: [resolvers, scalarsResolvers]});
 
 const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
 const config: ApolloServerExpressConfig = {

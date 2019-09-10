@@ -11,12 +11,9 @@
   "author": "Yarin Vaknin <yarinvak@gmail.com> (http://github.com/yarinvak)",
   "license": "ISC",
   "dependencies": {
-    "@enigmatis/polaris-delta-middleare": "latest",
-    "@enigmatis/polaris-graphql-logger": "latest",
-    "@enigmatis/polaris-schema": "latest",
-    "@enigmatis/polaris-typeorm": "latest",
     "apollo-server": "^2.9.3",
     "apollo-server-express": "^2.9.3",
+    "apollo-server-plugin-base": "^0.6.4",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "graphql-middleware": "^4.0.1",
@@ -25,5 +22,9 @@
     "pg": "^7.12.1",
     "reflect-metadata": "^0.1.13",
     "typeorm": "^0.2.18"
+  },
+  "devDependencies": {
+    "ts-node": "^8.3.0",
+    "typescript": "^3.6.2"
   }
 }

@@ -40,5 +40,12 @@ export async function initializeContextForRequest({req}) {
         writeFullMessageToConsole: false
     });
 
-    return contextBuilder.graphqlLogger(polarisGraphQLLogger).dataVersion(req.headers['data-version']).build();
+    let dataVersionHeader = req.headers['data-version'];
+    contextBuilder.graphqlLogger(polarisGraphQLLogger);
+
+    if (dataVersionHeader) {
+        contextBuilder.dataVersion(dataVersionHeader);
+    }
+
+    return contextBuilder.build();
 }

@@ -2,6 +2,7 @@ import {gql, makeExecutableSchema} from 'apollo-server';
 import {ApolloServer, ApolloServerExpressConfig} from 'apollo-server-express';
 import express from 'express';
 import {applyMiddleware} from 'graphql-middleware';
+import "reflect-metadata";
 import {
     dataVersionMiddleware,
     softDeletedMiddleware,
@@ -14,6 +15,8 @@ import {
     scalarsTypeDefs
 } from '@enigmatis/polaris-schema';
 import {initializeContextForRequest} from "./context-builder";
+import {createConnection} from "typeorm";
+import {Book} from "./dal/book";
 
 const books = [
     {
@@ -29,6 +32,28 @@ const books = [
         creationTime: new Date()
     },
 ];
+
+createConnection({
+    type: "postgres",
+    host: "localhost",
+    port: 5432,
+    username: "postgres",
+    password: "Aa123456",
+    database: "postgres",
+    entities: [
+        Book
+    ],
+    synchronize: true,
+    logging: false
+}).then(async connection => {
+    let bookRepository = connection.getRepository(Book);
+    let book = new Book();
+    book.author = "my book";
+    book.title = "my title";
+    book.dataVersion = 2;
+    await bookRepository.save(book);
+    console.log("book has been save");
+}).catch(error => console.log(error));
 
 const typeDefs = gql`
     # Comments in GraphQL are defined with the hash (#) symbol.
@@ -69,7 +94,10 @@ const resolvers = {
 };
 
 const app = express();
-const schema = makeExecutableSchema({typeDefs:[typeDefs, repositoryEntityTypeDefs, scalarsTypeDefs], resolvers: [resolvers, scalarsResolvers]});
+const schema = makeExecutableSchema({
+    typeDefs: [typeDefs, repositoryEntityTypeDefs, scalarsTypeDefs],
+    resolvers: [resolvers, scalarsResolvers]
+});
 
 const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
 const config: ApolloServerExpressConfig = {

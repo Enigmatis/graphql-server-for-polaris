@@ -4,12 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "link": "npm link ../polaris-schema && npm link ../polaris-delta-middleware && npm link ../graphql-logger && npm link ../polaris-typeorm",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsc & ts-node index.ts"
   },
   "author": "Yarin Vaknin <yarinvak@gmail.com> (http://github.com/yarinvak)",
   "license": "ISC",
   "dependencies": {
+    "@enigmatis/polaris-delta-middleare": "latest",
+    "@enigmatis/polaris-graphql-logger": "latest",
+    "@enigmatis/polaris-schema": "latest",
+    "@enigmatis/polaris-typeorm": "latest",
     "apollo-server": "^2.9.3",
     "apollo-server-express": "^2.9.3",
     "cors": "^2.8.5",
@@ -17,8 +22,8 @@
     "graphql-middleware": "^4.0.1",
     "graphql-request": "^1.8.2",
     "graphql-tools": "^4.0.5",
-    "@enigmatis/polaris-delta-middleare": "latest",
-    "@enigmatis/polaris-schema": "latest",
-    "@enigmatis/polaris-graphql-logger": "latest"
+    "pg": "^7.12.1",
+    "reflect-metadata": "^0.1.13",
+    "typeorm": "^0.2.18"
   }
 }

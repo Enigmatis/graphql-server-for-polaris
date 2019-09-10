@@ -17,8 +17,8 @@
     "graphql-middleware": "^4.0.1",
     "graphql-request": "^1.8.2",
     "graphql-tools": "^4.0.5",
-    "polaris-delta-middleare": "latest",
-    "polaris-schema": "latest",
-    "graphql-logger": "latest"
+    "@enigmatis/polaris-delta-middleare": "latest",
+    "@enigmatis/polaris-schema": "latest",
+    "@enigmatis/polaris-graphql-logger": "latest"
   }
 }

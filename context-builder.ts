@@ -1,4 +1,4 @@
-import {GraphQLLogger, PolarisGraphQLLogger} from "graphql-logger";
+import {GraphQLLogger, PolarisGraphQLLogger} from "@enigmatis/polaris-graphql-logger";
 
 export class ContextBuilder {
     private _logger: GraphQLLogger;

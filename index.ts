@@ -1,13 +1,13 @@
 import {gql} from 'apollo-server';
 import {ApolloServer, ApolloServerExpressConfig, makeExecutableSchema} from 'apollo-server-express';
 import express from 'express';
-import {applyMiddleware} from "graphql-middleware";
+import {applyMiddleware} from 'graphql-middleware';
 import {
     dataVersionMiddleware,
     softDeletedMiddleware,
     IrrelevantEntitiesExtension
-} from 'polaris-delta-middleware';
-import {repositoryEntityTypeDefs, scalarsResolvers, scalarsTypeDefs} from 'polaris-schema';
+} from '@enigmatis/polaris-delta-middleware';
+import {repositoryEntityTypeDefs, scalarsResolvers, scalarsTypeDefs} from '@enigmatis/polaris-schema';
 import {initializeContextForRequest} from "./context-builder";
 
 const books = [

@@ -4,12 +4,11 @@ import express from 'express';
 import {applyMiddleware} from "graphql-middleware";
 import {
     dataVersionMiddleware,
-    initContextForDataVersion,
     softDeletedMiddleware,
     IrrelevantEntitiesExtension
 } from 'polaris-delta-middleware';
 import {repositoryEntityTypeDefs, scalarsResolvers, scalarsTypeDefs} from 'polaris-schema';
-import {PolarisGraphQLLogger} from 'graphql-logger';
+import {initializeContextForRequest} from "./context-builder";
 
 const books = [
     {
@@ -21,7 +20,8 @@ const books = [
     {
         title: 'Jurassic Park',
         author: 'Michael Crichton',
-        dataVersion: 2
+        dataVersion: 2,
+        creationTime: new Date()
     },
 ];
 
@@ -49,17 +49,11 @@ const typeDefs = gql`
         bla: String
     }
 `;
-const applicationLogProperties = {id: 'example', name: 'example', component: 'repo', environment: 'dev', version: '1'};
-const polarisGraphQLLogger = new PolarisGraphQLLogger(applicationLogProperties, {
-    loggerLevel: 'info',
-    writeToConsole: true,
-    writeFullMessageToConsole: true
-});
+
 const resolvers = {
     Query: {
         books: (root, args, context, info) => {
             context.irrelevantEntities = {name: 'blabla'};
-            polarisGraphQLLogger.info("bookss", {polarisLogProperties: {reality: {id: 1, type: 'truth'}}});
             return books;
         },
         bla: () => "bla"
@@ -77,7 +71,7 @@ const schema = makeExecutableSchema({
 const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
 const config: ApolloServerExpressConfig = {
     schema: executableSchema,
-    context: initContextForDataVersion,
+    context: initializeContextForRequest,
     extensions: [() => new IrrelevantEntitiesExtension()]
 };
 

@@ -6,7 +6,7 @@ import "reflect-metadata";
 import {
     dataVersionMiddleware,
     softDeletedMiddleware,
-    IrrelevantEntitiesExtension
+    DataVersionExtensions
 } from '@enigmatis/polaris-delta-middleware';
 
 import {
@@ -126,7 +126,7 @@ const play = async () => {
     const config: ApolloServerExpressConfig = {
         schema: executableSchema,
         context: initializeContextForRequest,
-        extensions: [() => new IrrelevantEntitiesExtension()]
+        extensions: [() => new DataVersionExtensions(connection.getRepository(DataVersion))]
     };
 
     initDb().then(() => {

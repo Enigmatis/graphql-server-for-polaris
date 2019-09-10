@@ -17,7 +17,7 @@ import {
 import {initializeContextForRequest} from "./context-builder";
 import {ConnectionOptions, createConnection} from "typeorm";
 import {Book} from "./dal/book";
-import {CommonEntitySubscriber} from '@enigmatis/polaris-typeorm';
+import {CommonEntitySubscriber, DataVersion} from '@enigmatis/polaris-typeorm';
 
 const books = [
     {
@@ -42,7 +42,8 @@ let connectionOptions: ConnectionOptions = {
     password: "Aa123456",
     database: "postgres",
     entities: [
-        __dirname + '/dal/*.ts'
+        __dirname + '/dal/*.ts',
+        DataVersion
     ],
     subscribers: [
         CommonEntitySubscriber
@@ -56,8 +57,10 @@ const play = async () => {
 
     let initDb = async () => {
         let bookRepo = connection.getRepository(Book);
-        let book1 = new Book('Harry Potter and the Chamber of Secrets', 'J.K. Rowling', 2);
-        let book2 = new Book('Jurassic Park', 'Michael Crichton', 5);
+        await bookRepo.clear();
+        await connection.getRepository(DataVersion).clear();
+        let book1 = new Book('Harry Potter and the Chamber of Secrets', 'J.K. Rowling', 1);
+        let book2 = new Book('Jurassic Park', 'Michael Crichton', 1);
         return bookRepo.save([book1, book2]);
     };
 
@@ -76,6 +79,7 @@ const play = async () => {
         title: String
         author: String
         aList: [String]
+        dataVersion: Int
     }
 
     # The "Query" type is the root of all GraphQL queries.

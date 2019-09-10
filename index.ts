@@ -17,6 +17,7 @@ import {
 import {initializeContextForRequest} from "./context-builder";
 import {ConnectionOptions, createConnection} from "typeorm";
 import {Book} from "./dal/book";
+import {CommonEntitySubscriber} from '@enigmatis/polaris-typeorm';
 
 const books = [
     {
@@ -42,6 +43,9 @@ let connectionOptions: ConnectionOptions = {
     database: "postgres",
     entities: [
         __dirname + '/dal/*.ts'
+    ],
+    subscribers: [
+        CommonEntitySubscriber
     ],
     synchronize: true,
     logging: false
@@ -80,6 +84,9 @@ const play = async () => {
         books: [Book]
         bla: String
     }
+    type Mutation {
+        insertBook(title: String!, author: String!): Boolean
+    }
 `;
 
     const resolvers = {
@@ -91,6 +98,14 @@ const play = async () => {
                 return books;
             },
             bla: () => "bla"
+        },
+        Mutation: {
+            insertBook: async (root, args, context, info) => {
+                const bookRepo = connection.getRepository(Book);
+                let book = new Book(args.title, args.author, 2);
+                await bookRepo.save(book, {data: {context}});
+                return true;
+            }
         },
         Book: {
             aList: () => ["asd", "asddd", "bdbdb"]

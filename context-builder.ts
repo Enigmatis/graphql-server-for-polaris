@@ -37,7 +37,7 @@ export async function initializeContextForRequest({req}) {
     const polarisGraphQLLogger = new PolarisGraphQLLogger(applicationLogProperties, {
         loggerLevel: 'debug',
         writeToConsole: true,
-        writeFullMessageToConsole: true
+        writeFullMessageToConsole: false
     });
 
     return contextBuilder.graphqlLogger(polarisGraphQLLogger).dataVersion(req.headers['data-version']).build();

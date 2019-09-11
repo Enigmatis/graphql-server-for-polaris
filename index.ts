@@ -151,7 +151,7 @@ const play = async () => {
         server.applyMiddleware({app});
 
         app.listen(4000, (() => {
-            console.log(`🚀  Server ready http://localhost:4000/graphql`);
+            polarisGraphQLLogger.info(`🚀  Server ready http://localhost:4000/graphql`);
         }));
     });
 };

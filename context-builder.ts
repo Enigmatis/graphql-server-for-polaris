@@ -1,8 +1,9 @@
-import {GraphQLLogger, PolarisGraphQLLogger} from "@enigmatis/polaris-graphql-logger";
-
+import {PolarisGraphQLLogger, GraphQLLogger} from "graphql-logger";
 export class ContextBuilder {
     private _logger: GraphQLLogger;
     private _dataVersion: number;
+    private _realityId: number;
+    private _includeLinkedOper: boolean;
 
     graphqlLogger(logger: GraphQLLogger) {
         if (!logger) {
@@ -20,8 +21,20 @@ export class ContextBuilder {
         return this;
     }
 
+    realityId(realityId: number) {
+        if (realityId) {
+            this._realityId = +realityId;
+        } else {
+            this._realityId = 0;
+        }
+    }
+
+    includeLinkedOper(includeLinkedOper){
+        this._includeLinkedOper = includeLinkedOper == "false"? false: true;
+    }
+
     build() {
-        return {logger: this._logger, dataVersion: this._dataVersion};
+        return {logger: this._logger, dataVersion: this._dataVersion, realityId: this._realityId, includeLinkedOper: this._includeLinkedOper};
     }
 }
 
@@ -41,11 +54,14 @@ export async function initializeContextForRequest({req}) {
     });
 
     let dataVersionHeader = req.headers['data-version'];
+    let realityIdHeader = req.headers['reality-id'];
+    let includeLinkedOper = req.headers['include-linked-oper'];
     contextBuilder.graphqlLogger(polarisGraphQLLogger);
 
     if (dataVersionHeader) {
         contextBuilder.dataVersion(dataVersionHeader);
     }
-
+    contextBuilder.includeLinkedOper(includeLinkedOper);
+    contextBuilder.realityId(realityIdHeader);
     return contextBuilder.build();
 }

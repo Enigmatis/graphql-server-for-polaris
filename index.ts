@@ -6,17 +6,18 @@ import "reflect-metadata";
 import {
     dataVersionMiddleware,
     softDeletedMiddleware,
-    IrrelevantEntitiesExtension
+    ExtensionsPlugin
 } from '@enigmatis/polaris-delta-middleware';
-
+import {realitiesMiddleware} from 'polaris-realities-middleware'
 import {
     repositoryEntityTypeDefs,
     scalarsResolvers,
     scalarsTypeDefs
 } from '@enigmatis/polaris-schema';
 import {initializeContextForRequest} from "./context-builder";
-import {createConnection} from "typeorm";
+import {ConnectionOptions, createConnection} from "typeorm";
 import {Book} from "./dal/book";
+import {CommonEntitySubscriber, DataVersion} from '@enigmatis/polaris-typeorm';
 
 const books = [
     {
@@ -33,7 +34,7 @@ const books = [
     },
 ];
 
-createConnection({
+let connectionOptions: ConnectionOptions = {
     type: "postgres",
     host: "localhost",
     port: 5432,
@@ -41,21 +42,29 @@ createConnection({
     password: "Aa123456",
     database: "postgres",
     entities: [
-        Book
+        __dirname + '/dal/*.ts',
+        DataVersion
+    ],
+    subscribers: [
+        CommonEntitySubscriber
     ],
     synchronize: true,
     logging: false
-}).then(async connection => {
-    let bookRepository = connection.getRepository(Book);
-    let book = new Book();
-    book.author = "my book";
-    book.title = "my title";
-    book.dataVersion = 2;
-    await bookRepository.save(book);
-    console.log("book has been save");
-}).catch(error => console.log(error));
+};
 
-const typeDefs = gql`
+const play = async () => {
+    const connection = await createConnection(connectionOptions);
+
+    let initDb = async () => {
+        let bookRepo = connection.getRepository(Book);
+        await bookRepo.clear();
+        await connection.getRepository(DataVersion).clear();
+        let book1 = new Book('Harry Potter and the Chamber of Secrets', 'J.K. Rowling', 1);
+        let book2 = new Book('Jurassic Park', 'Michael Crichton', 1);
+        return bookRepo.save([book1, book2]);
+    };
+
+    const typeDefs = gql`
     # Comments in GraphQL are defined with the hash (#) symbol.
     
     # This "Book" type can be used in other type declarations.
@@ -70,6 +79,7 @@ const typeDefs = gql`
         title: String
         author: String
         aList: [String]
+        dataVersion: Int
     }
 
     # The "Query" type is the root of all GraphQL queries.
@@ -78,39 +88,56 @@ const typeDefs = gql`
         books: [Book]
         bla: String
     }
+    type Mutation {
+        insertBook(title: String!, author: String!): Boolean
+    }
 `;
 
-const resolvers = {
-    Query: {
-        books: (root, args, context, info) => {
-            context.irrelevantEntities = {name: 'blabla'};
-            return books;
+    const resolvers = {
+        Query: {
+            books: async (root, args, context, info) => {
+                context.irrelevantEntities = {name: 'blabla'};
+                const bookRepo = connection.getRepository(Book);
+                let books = await bookRepo.find();
+                return books;
+            },
+            bla: () => "bla"
         },
-        bla: () => "bla"
-    },
-    Book: {
-        aList: () => ["asd", "asddd", "bdbdb"]
-    }
+        Mutation: {
+            insertBook: async (root, args, context, info) => {
+                const bookRepo = connection.getRepository(Book);
+                let book = new Book(args.title, args.author, 2);
+                await bookRepo.save(book, {data: {context}});
+                return true;
+            }
+        },
+        Book: {
+            aList: () => ["asd", "asddd", "bdbdb"]
+        }
+    };
+
+    const app = express();
+    const schema = makeExecutableSchema({
+        typeDefs: [typeDefs, repositoryEntityTypeDefs, scalarsTypeDefs],
+        resolvers: [resolvers, scalarsResolvers]
+    });
+
+    const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware, realitiesMiddleware);
+    const config: ApolloServerExpressConfig = {
+        schema: executableSchema,
+        context: initializeContextForRequest,
+        plugins: [() => new ExtensionsPlugin(connection.getRepository(DataVersion))],
+    };
+
+    initDb().then(() => {
+        const server = new ApolloServer(config);
+
+        server.applyMiddleware({app});
+
+        app.listen(4000, (() => {
+            console.log(`🚀  Server ready http://localhost:4000/graphql`);
+        }));
+    });
 };
 
-const app = express();
-const schema = makeExecutableSchema({
-    typeDefs: [typeDefs, repositoryEntityTypeDefs, scalarsTypeDefs],
-    resolvers: [resolvers, scalarsResolvers]
-});
-
-const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
-const config: ApolloServerExpressConfig = {
-    schema: executableSchema,
-    context: initializeContextForRequest,
-    extensions: [() => new IrrelevantEntitiesExtension()]
-};
-
-
-const server = new ApolloServer(config);
-
-server.applyMiddleware({app});
-
-app.listen(4000, (() => {
-    console.log(`🚀  Server ready http://localhost:4000/graphql`);
-}));
+play();

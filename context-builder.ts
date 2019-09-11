@@ -1,5 +1,9 @@
 import {GraphQLLogger, PolarisGraphQLLogger} from "@enigmatis/polaris-graphql-logger";
-import {PolarisBaseContext} from '@enigmatis/polaris-types';
+import {DeltaMiddlewareContext} from '@enigmatis/polaris-delta-middleware';
+
+export interface PolarisContext extends DeltaMiddlewareContext {
+
+}
 
 export class ContextBuilder {
     private _logger: GraphQLLogger;
@@ -21,7 +25,7 @@ export class ContextBuilder {
         return this;
     }
 
-    build(): PolarisBaseContext {
+    build(): PolarisContext {
         return {logger: this._logger, dataVersion: this._dataVersion};
     }
 }

@@ -2,7 +2,6 @@ import {gql, makeExecutableSchema} from 'apollo-server';
 import {ApolloServer, ApolloServerExpressConfig} from 'apollo-server-express';
 import express from 'express';
 import {applyMiddleware} from 'graphql-middleware';
-import "reflect-metadata";
 import {
     dataVersionMiddleware,
     softDeletedMiddleware,
@@ -17,8 +16,11 @@ import {
 import {ContextInitializer} from "./context-builder";
 import {ConnectionOptions, createConnection} from "typeorm";
 import {Book} from "./dal/book";
-import {CommonEntitySubscriber, DataVersion} from '@enigmatis/polaris-typeorm';
+import {CommonEntitySubscriber, CommonModel, DataVersion} from '@enigmatis/polaris-typeorm';
+
 import {PolarisGraphQLLogger} from '@enigmatis/polaris-graphql-logger';
+
+import "reflect-metadata";
 
 const books = [
     {
@@ -44,6 +46,7 @@ let connectionOptions: ConnectionOptions = {
     database: "postgres",
     entities: [
         __dirname + '/dal/*.ts',
+        CommonModel,
         DataVersion
     ],
     subscribers: [
@@ -66,33 +69,33 @@ const play = async () => {
     };
 
     const typeDefs = gql`
-    # Comments in GraphQL are defined with the hash (#) symbol.
-    
-    # This "Book" type can be used in other type declarations.
-    type Book implements RepositoryEntity {
-        id: String!
-        deleted: Boolean!
-        createdBy: String!
-        creationTime: DateTime!
-        lastUpdatedBy: String
-        lastUpdateTime: DateTime
-        realityId: Int!
-        title: String
-        author: String
-        aList: [String]
-        dataVersion: Int
-    }
+        # Comments in GraphQL are defined with the hash (#) symbol.
 
-    # The "Query" type is the root of all GraphQL queries.
-    # (A "Mutation" type will be covered later on.)
-    type Query {
-        books: [Book]
-        bla: String
-    }
-    type Mutation {
-        insertBook(title: String!, author: String!): Boolean
-    }
-`;
+        # This "Book" type can be used in other type declarations.
+        type Book implements RepositoryEntity {
+            id: String!
+            deleted: Boolean!
+            createdBy: String!
+            creationTime: DateTime!
+            lastUpdatedBy: String
+            lastUpdateTime: DateTime
+            realityId: Int!
+            title: String
+            author: String
+            aList: [String]
+            dataVersion: Int
+        }
+
+        # The "Query" type is the root of all GraphQL queries.
+        # (A "Mutation" type will be covered later on.)
+        type Query {
+            books: [Book]
+            bla: String
+        }
+        type Mutation {
+            insertBook(title: String!, author: String!): Boolean
+        }
+    `;
 
     const resolvers = {
         Query: {
@@ -108,7 +111,9 @@ const play = async () => {
             insertBook: async (root, args, context, info) => {
                 const bookRepo = connection.getRepository(Book);
                 let book = new Book(args.title, args.author, 2);
+                let book2 = new Book(args.title + "a", args.author + "3", 2);
                 await bookRepo.save(book, {data: {context}});
+                await bookRepo.save(book2, {data: {context}});
                 return true;
             }
         },
@@ -141,7 +146,7 @@ const play = async () => {
     const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
     const config: ApolloServerExpressConfig = {
         schema: executableSchema,
-        context: ({req})=> new ContextInitializer(polarisGraphQLLogger).initializeContextForRequest({req}),
+        context: ({req}) => new ContextInitializer(polarisGraphQLLogger).initializeContextForRequest({req}),
         plugins: [() => new ExtensionsPlugin(connection.getRepository(DataVersion))],
     };
 

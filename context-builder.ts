@@ -26,27 +26,22 @@ export class ContextBuilder {
     }
 }
 
-export async function initializeContextForRequest({req}) {
-    const contextBuilder = new ContextBuilder();
-    const applicationLogProperties = {
-        id: 'example',
-        name: 'example',
-        component: 'repo',
-        environment: 'dev',
-        version: '1'
-    };
-    const polarisGraphQLLogger = new PolarisGraphQLLogger(applicationLogProperties, {
-        loggerLevel: 'debug',
-        writeToConsole: true,
-        writeFullMessageToConsole: false
-    });
+export class ContextInitializer {
+    private logger: GraphQLLogger;
 
-    let dataVersionHeader = req.headers['data-version'];
-    contextBuilder.graphqlLogger(polarisGraphQLLogger);
-
-    if (dataVersionHeader) {
-        contextBuilder.dataVersion(dataVersionHeader);
+    constructor(logger: GraphQLLogger) {
+        this.logger = logger;
     }
 
-    return contextBuilder.build();
+    async initializeContextForRequest({req}) {
+        const contextBuilder = new ContextBuilder();
+        let dataVersionHeader = req.headers['data-version'];
+        contextBuilder.graphqlLogger(this.logger);
+
+        if (dataVersionHeader) {
+            contextBuilder.dataVersion(dataVersionHeader);
+        }
+
+        return contextBuilder.build();
+    }
 }

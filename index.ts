@@ -14,10 +14,11 @@ import {
     scalarsResolvers,
     scalarsTypeDefs
 } from '@enigmatis/polaris-schema';
-import {initializeContextForRequest} from "./context-builder";
+import {ContextInitializer} from "./context-builder";
 import {ConnectionOptions, createConnection} from "typeorm";
 import {Book} from "./dal/book";
 import {CommonEntitySubscriber, DataVersion} from '@enigmatis/polaris-typeorm';
+import {PolarisGraphQLLogger} from '@enigmatis/polaris-graphql-logger';
 
 const books = [
     {
@@ -122,10 +123,25 @@ const play = async () => {
         resolvers: [resolvers, scalarsResolvers]
     });
 
+    const applicationLogProperties = {
+        id: 'example',
+        name: 'example',
+        component: 'repo',
+        environment: 'dev',
+        version: '1'
+    };
+
+
+    const polarisGraphQLLogger = new PolarisGraphQLLogger(applicationLogProperties, {
+        loggerLevel: 'debug',
+        writeToConsole: true,
+        writeFullMessageToConsole: false
+    });
+
     const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware);
     const config: ApolloServerExpressConfig = {
         schema: executableSchema,
-        context: initializeContextForRequest,
+        context: ({req})=> new ContextInitializer(polarisGraphQLLogger).initializeContextForRequest({req}),
         plugins: [() => new ExtensionsPlugin(connection.getRepository(DataVersion))],
     };
 

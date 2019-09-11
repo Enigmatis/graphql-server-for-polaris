@@ -1,4 +1,5 @@
 import {GraphQLLogger, PolarisGraphQLLogger} from "@enigmatis/polaris-graphql-logger";
+import {PolarisBaseContext} from '@enigmatis/polaris-types';
 
 export class ContextBuilder {
     private _logger: GraphQLLogger;
@@ -20,7 +21,7 @@ export class ContextBuilder {
         return this;
     }
 
-    build() {
+    build(): PolarisBaseContext {
         return {logger: this._logger, dataVersion: this._dataVersion};
     }
 }

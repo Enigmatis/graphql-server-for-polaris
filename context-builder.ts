@@ -62,7 +62,9 @@ export class ContextInitializer {
         if (dataVersionHeader) {
             contextBuilder.dataVersion(dataVersionHeader);
         }
-        contextBuilder.includeLinkedOper(includeLinkedOper);
+        if (includeLinkedOper) {
+            contextBuilder.includeLinkedOper(includeLinkedOper);
+        }
         contextBuilder.realityId(realityIdHeader);
 
         return contextBuilder.build();

@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/graphql-server-for-polaris.iml" filepath="$PROJECT_DIR$/.idea/graphql-server-for-polaris.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../polaris-delta-middleware/.idea/polaris-delta-middleware.iml" filepath="$PROJECT_DIR$/../polaris-delta-middleware/.idea/polaris-delta-middleware.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../polaris-typeorm/.idea/polaris-typeorm.iml" filepath="$PROJECT_DIR$/../polaris-typeorm/.idea/polaris-typeorm.iml" />
     </modules>
   </component>
 </project>

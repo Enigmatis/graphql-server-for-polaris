@@ -94,6 +94,7 @@ const play = async () => {
         }
         type Mutation {
             insertBook(title: String!, author: String!): Boolean
+            updateBookTitle(id: String!, newTitle: String!, realityId: Int): Book 
         }
     `;
 
@@ -115,6 +116,21 @@ const play = async () => {
                 await bookRepo.save(book, {data: {context}});
                 await bookRepo.save(book2, {data: {context}});
                 return true;
+            },
+            updateBookTitle: async (root, args, context, info) =>{
+                const bookRepo = connection.getRepository(Book);
+                let book = await bookRepo.findOne(args.id);
+                if(book != null){
+                    book.title = undefined; //args.newTitle;
+                    if (args.realityId != null){
+                        book.realityId = args.realityId;
+                    }
+                    await bookRepo.save(book, {data: {context}})
+                    return await bookRepo.findOne(args.id);
+                }
+                else{
+                    throw new Error("No such book with id: " + args.id);
+                }
             }
         },
         Book: {

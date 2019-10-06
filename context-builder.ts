@@ -40,7 +40,7 @@ export class ContextBuilder {
     }
 
     build(): PolarisContext {
-        return {logger: this._logger, dataVersion: this._dataVersion};
+        return {logger: this._logger, dataVersion: this._dataVersion, realityId: this._realityId};
     }
 }
 

@@ -6,20 +6,22 @@ import {
     dataVersionMiddleware,
     softDeletedMiddleware,
     ExtensionsPlugin
-} from '@enigmatis/polaris-delta-middleware';
-import {realitiesMiddleware} from '@enigmatis/polaris-realities-middleware'
+} from '../polaris-delta-middleware';
+import {realitiesMiddleware} from '../polaris-realities-middleware'
 import {
     repositoryEntityTypeDefs,
     scalarsResolvers,
     scalarsTypeDefs
-} from '@enigmatis/polaris-schema';
+} from '../polaris-schema';
 import {ContextInitializer} from "./context-builder";
-import {ConnectionOptions, createConnection} from "typeorm";
 import {Book} from "./dal/book";
-import {CommonEntitySubscriber, CommonModel, DataVersion} from '@enigmatis/polaris-typeorm';
-
+import {
+    CommonModel,
+    DataVersion,
+    createPolarisConnection,
+    ConnectionOptions
+} from '../polaris-typeorm';
 import {PolarisGraphQLLogger} from '@enigmatis/polaris-graphql-logger';
-
 import "reflect-metadata";
 
 const books = [
@@ -49,23 +51,34 @@ let connectionOptions: ConnectionOptions = {
         CommonModel,
         DataVersion
     ],
-    subscribers: [
-        CommonEntitySubscriber
-    ],
     synchronize: true,
     logging: false
 };
 
+const applicationLogProperties = {
+    id: 'example',
+    name: 'example',
+    component: 'repo',
+    environment: 'dev',
+    version: '1'
+};
+
+const polarisGraphQLLogger = new PolarisGraphQLLogger(applicationLogProperties, {
+    loggerLevel: 'debug',
+    writeToConsole: true,
+    writeFullMessageToConsole: false
+});
+
 const play = async () => {
-    const connection = await createConnection(connectionOptions);
+    const connection = await createPolarisConnection(connectionOptions,{});
 
     let initDb = async () => {
+        await connection.dropDatabase();
+        await connection.synchronize();
         let bookRepo = connection.getRepository(Book);
-        await bookRepo.clear();
-        await connection.getRepository(DataVersion).clear();
-        let book1 = new Book('Harry Potter and the Chamber of Secrets', 'J.K. Rowling', 1);
-        let book2 = new Book('Jurassic Park', 'Michael Crichton', 1);
-        return bookRepo.save([book1, book2]);
+        let book1 = new Book('Harry Potter and the Chamber of Secrets', 'J.K. Rowling');
+        let book2 = new Book('Jurassic Park', 'Michael Crichton');
+       // await bookRepo.save([book1, book2]);
     };
 
     const typeDefs = gql`
@@ -110,10 +123,10 @@ const play = async () => {
         Mutation: {
             insertBook: async (root, args, context, info) => {
                 const bookRepo = connection.getRepository(Book);
-                let book = new Book(args.title, args.author, 2);
-                let book2 = new Book(args.title + "a", args.author + "3", 2);
-                await bookRepo.save(book, {data: {context}});
-                await bookRepo.save(book2, {data: {context}});
+                let book = new Book(args.title, args.author);
+                let book2 = new Book(args.title + "a", args.author + "3");
+                await bookRepo.save(book);
+                await bookRepo.save(book2);
                 return true;
             }
         },
@@ -128,25 +141,10 @@ const play = async () => {
         resolvers: [resolvers, scalarsResolvers]
     });
 
-    const applicationLogProperties = {
-        id: 'example',
-        name: 'example',
-        component: 'repo',
-        environment: 'dev',
-        version: '1'
-    };
-
-
-    const polarisGraphQLLogger = new PolarisGraphQLLogger(applicationLogProperties, {
-        loggerLevel: 'debug',
-        writeToConsole: true,
-        writeFullMessageToConsole: false
-    });
-
     const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware, realitiesMiddleware);
     const config: ApolloServerExpressConfig = {
         schema: executableSchema,
-        context: ({req}) => new ContextInitializer(polarisGraphQLLogger).initializeContextForRequest({req}),
+        context: ({req}) => new ContextInitializer(polarisGraphQLLogger, connection).initializeContextForRequest({req}),
         plugins: [() => new ExtensionsPlugin(connection.getRepository(DataVersion))],
     };
 

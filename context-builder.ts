@@ -1,5 +1,6 @@
 import {GraphQLLogger, PolarisGraphQLLogger} from "@enigmatis/polaris-graphql-logger";
 import {DeltaMiddlewareContext} from '@enigmatis/polaris-delta-middleware';
+import { PolarisConnection } from "@enigmatis/polaris-typeorm/src/connections/connection";
 
 export interface PolarisContext extends DeltaMiddlewareContext {
 
@@ -45,10 +46,12 @@ export class ContextBuilder {
 }
 
 export class ContextInitializer {
-    private logger: GraphQLLogger;
+    private readonly logger: GraphQLLogger;
+    private readonly polarisConnection: PolarisConnection;
 
-    constructor(logger: GraphQLLogger) {
+    constructor(logger: GraphQLLogger, polarisConnection: PolarisConnection) {
         this.logger = logger;
+        this.polarisConnection = polarisConnection;
     }
 
     async initializeContextForRequest({req}) {
@@ -66,7 +69,8 @@ export class ContextInitializer {
             contextBuilder.includeLinkedOper(includeLinkedOper);
         }
         contextBuilder.realityId(realityIdHeader);
-
-        return contextBuilder.build();
+        let context: PolarisContext = contextBuilder.build();
+        this.polarisConnection.manager.queryRunner.data.context = context;
+        return context;
     }
 }

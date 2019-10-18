@@ -1,14 +1,13 @@
-import {Column, Entity} from "typeorm";
-import {CommonModel} from '@enigmatis/polaris-typeorm';
+// @ts-ignore
+import {CommonModel, Column, Entity} from '@enigmatis/polaris-typeorm';
 
 @Entity()
 export class Book extends CommonModel {
 
-    constructor(title?: string, author?: string, dataVersion?: number) {
+    constructor(title: string, author: string) {
         super();
         title ? this.title = title : {};
         author ? this.author = author : {};
-        dataVersion ? this.dataVersion = dataVersion : {};
     }
 
     @Column()

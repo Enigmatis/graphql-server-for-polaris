@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "link": "npm link @enigmatis/polaris-schema && npm link @enigmatis/polaris-delta-middleware && npm link @enigmatis/polaris-realities-middleware && npm link @enigmatis/polaris-graphql-logger && npm link @enigmatis/polaris-typeorm",
+    "link": "npm link @enigmatis/polaris-schema && npm link @enigmatis/polaris-middlewares && npm link @enigmatis/polaris-graphql-logger && npm link @enigmatis/polaris-typeorm && npm link @enigmatis/polaris-common",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsc & ts-node index.ts"
   },

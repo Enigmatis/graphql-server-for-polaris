@@ -1,8 +1,8 @@
 import {GraphQLLogger, PolarisGraphQLLogger} from "@enigmatis/polaris-graphql-logger";
-import {DeltaMiddlewareContext} from '@enigmatis/polaris-delta-middleware';
-import { PolarisConnection } from "@enigmatis/polaris-typeorm/src/connections/connection";
+import {PolarisBaseContext} from "@enigmatis/polaris-common"
+import { Connection } from "@enigmatis/polaris-typeorm";
 
-export interface PolarisContext extends DeltaMiddlewareContext {
+export interface PolarisContext extends PolarisBaseContext{
 
 }
 
@@ -47,9 +47,9 @@ export class ContextBuilder {
 
 export class ContextInitializer {
     private readonly logger: GraphQLLogger;
-    private readonly polarisConnection: PolarisConnection;
+    private readonly polarisConnection: Connection;
 
-    constructor(logger: GraphQLLogger, polarisConnection: PolarisConnection) {
+    constructor(logger: GraphQLLogger, polarisConnection: Connection) {
         this.logger = logger;
         this.polarisConnection = polarisConnection;
     }

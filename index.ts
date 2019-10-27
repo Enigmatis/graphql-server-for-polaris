@@ -7,7 +7,7 @@ import {
     softDeletedMiddleware,
     ExtensionsPlugin,
     realitiesMiddleware
-} from '@enigmatis/polaris-delta-middleware';
+} from '@enigmatis/polaris-middlewares';
 import {
     repositoryEntityTypeDefs,
     scalarsResolvers,

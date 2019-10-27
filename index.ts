@@ -5,14 +5,14 @@ import {applyMiddleware} from 'graphql-middleware';
 import {
     dataVersionMiddleware,
     softDeletedMiddleware,
-    ExtensionsPlugin
-} from '../polaris-delta-middleware';
-import {realitiesMiddleware} from '../polaris-realities-middleware'
+    ExtensionsPlugin,
+    realitiesMiddleware
+} from '@enigmatis/polaris-delta-middleware';
 import {
     repositoryEntityTypeDefs,
     scalarsResolvers,
     scalarsTypeDefs
-} from '../polaris-schema';
+} from '@enigmatis/polaris-schema';
 import {ContextInitializer} from "./context-builder";
 import {Book} from "./dal/book";
 import {

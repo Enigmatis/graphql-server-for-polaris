@@ -6,14 +6,15 @@ import {
     dataVersionMiddleware,
     softDeletedMiddleware,
     ExtensionsPlugin,
-    realitiesMiddleware
+    realitiesMiddleware,
+    irrelevantEntitiesMiddleware
 } from '@enigmatis/polaris-middlewares';
 import {
     repositoryEntityTypeDefs,
     scalarsResolvers,
     scalarsTypeDefs
 } from '@enigmatis/polaris-schema';
-import {ContextInitializer} from "./context-builder";
+import {ContextInitializer, PolarisContext} from "./context-builder";
 import {Book} from "./dal/book";
 import {
     CommonModel,
@@ -21,6 +22,7 @@ import {
     createPolarisConnection,
     ConnectionOptions
 } from '../polaris-typeorm';
+import {Like} from '@enigmatis/polaris-typeorm'
 import {PolarisGraphQLLogger} from '@enigmatis/polaris-graphql-logger';
 import "reflect-metadata";
 
@@ -41,11 +43,7 @@ const books = [
 
 let connectionOptions: ConnectionOptions = {
     type: "postgres",
-    host: "localhost",
-    port: 5432,
-    username: "postgres",
-    password: "Aa123456",
-    database: "postgres",
+    url:"postgres://dbgazwwm:2ZIUE9vCEh-u-yHNENAhxbgrVJchkg8d@manny.db.elephantsql.com:5432/dbgazwwm",
     entities: [
         __dirname + '/dal/*.ts',
         CommonModel,
@@ -63,22 +61,23 @@ const applicationLogProperties = {
     version: '1'
 };
 
-const polarisGraphQLLogger = new PolarisGraphQLLogger(applicationLogProperties, {
+const polarisGraphQLLogger = new PolarisGraphQLLogger<PolarisContext>(applicationLogProperties, {
     loggerLevel: 'debug',
     writeToConsole: true,
     writeFullMessageToConsole: false
 });
 
 const play = async () => {
-    const connection = await createPolarisConnection(connectionOptions,{});
+    // @ts-ignore
+    const connection = await createPolarisConnection(connectionOptions, polarisGraphQLLogger);
 
     let initDb = async () => {
-        await connection.dropDatabase();
+        await connection.manager.queryRunner.dropTable("book")
         await connection.synchronize();
         let bookRepo = connection.getRepository(Book);
         let book1 = new Book('Harry Potter and the Chamber of Secrets', 'J.K. Rowling');
         let book2 = new Book('Jurassic Park', 'Michael Crichton');
-       // await bookRepo.save([book1, book2]);
+        await bookRepo.save([book1, book2]);
     };
 
     const typeDefs = gql`
@@ -103,6 +102,7 @@ const play = async () => {
         # (A "Mutation" type will be covered later on.)
         type Query {
             books: [Book]
+            booksStartWith(startWith: String!): [Book]
             bla: String
         }
         type Mutation {
@@ -116,6 +116,11 @@ const play = async () => {
                 context.irrelevantEntities = {name: 'blabla'};
                 const bookRepo = connection.getRepository(Book);
                 let books = await bookRepo.find();
+                return books;
+            },
+            booksStartWith: async (root, args, context, info) => {
+                const bookRepo = connection.getRepository(Book);
+                let books = await bookRepo.find({where:{title: Like(`${args.startWith}%`)}});
                 return books;
             },
             bla: () => "bla"
@@ -141,10 +146,10 @@ const play = async () => {
         resolvers: [resolvers, scalarsResolvers]
     });
 
-    const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware, realitiesMiddleware);
+    const executableSchema = applyMiddleware(schema, dataVersionMiddleware, softDeletedMiddleware, realitiesMiddleware, irrelevantEntitiesMiddleware);
     const config: ApolloServerExpressConfig = {
         schema: executableSchema,
-        context: ({req}) => new ContextInitializer(polarisGraphQLLogger, connection).initializeContextForRequest({req}),
+        context: ({req,res}) => new ContextInitializer(polarisGraphQLLogger, connection).initializeContextForRequest({req, res}),
         plugins: [() => new ExtensionsPlugin(connection.getRepository(DataVersion))],
     };
 

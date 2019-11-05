@@ -8,5 +8,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="polaris-middlewares" />
+    <orderEntry type="module" module-name="polaris-typeorm" />
+    <orderEntry type="module" module-name="polaris-common" />
   </component>
 </module>

@@ -3,11 +3,11 @@ import {PolarisBaseContext} from "@enigmatis/polaris-common"
 import { Connection } from "@enigmatis/polaris-typeorm";
 
 export interface PolarisContext extends PolarisBaseContext{
-
 }
 
 export class ContextBuilder {
     private _logger: GraphQLLogger;
+    private _res: any;
     private _dataVersion: number;
     private _realityId: number;
     private _includeLinkedOper: boolean;
@@ -40,8 +40,12 @@ export class ContextBuilder {
         this._includeLinkedOper = includeLinkedOper == "false"? false: true;
     }
 
+    res(res){
+        this._res = res;
+    }
+
     build(): PolarisContext {
-        return {logger: this._logger, dataVersion: this._dataVersion};
+        return {logger: this._logger, dataVersion: this._dataVersion, res: this._res};
     }
 }
 
@@ -54,7 +58,7 @@ export class ContextInitializer {
         this.polarisConnection = polarisConnection;
     }
 
-    async initializeContextForRequest({req}) {
+    async initializeContextForRequest({req, res}) {
         const contextBuilder = new ContextBuilder();
         let dataVersionHeader = req.headers['data-version'];
         let realityIdHeader = req.headers['reality-id'];
@@ -69,7 +73,9 @@ export class ContextInitializer {
             contextBuilder.includeLinkedOper(includeLinkedOper);
         }
         contextBuilder.realityId(realityIdHeader);
+        contextBuilder.res(res);
         let context: PolarisContext = contextBuilder.build();
+        res.locals.irrelevantEntities = {};
         this.polarisConnection.manager.queryRunner.data.context = context;
         return context;
     }

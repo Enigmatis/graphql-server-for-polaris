@@ -72,7 +72,16 @@ const play = async () => {
     const connection = await createPolarisConnection(connectionOptions, polarisGraphQLLogger);
 
     let initDb = async () => {
-        await connection.manager.queryRunner.dropTable("book")
+        const tables = ['user', 'profile', 'book', 'author', 'library', 'dataVersion'];
+        for (const table of tables) {
+            if (connection.manager) {
+                try {
+                    await connection.manager.getRepository(table).query('DELETE FROM "' + table + '";');
+                }catch (e) {
+
+                }
+            }
+        }
         await connection.synchronize();
         let bookRepo = connection.getRepository(Book);
         let book1 = new Book('Harry Potter and the Chamber of Secrets', 'J.K. Rowling');
